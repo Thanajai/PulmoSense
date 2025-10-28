@@ -1,4 +1,5 @@
-import { User } from 'firebase/auth';
+// FIX: Updated Firebase import path from 'firebase/auth' to '@firebase/auth' to resolve module export error.
+import { User } from '@firebase/auth';
 
 export interface SensorData {
   timestamp: string;

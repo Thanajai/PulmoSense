@@ -1,6 +1,7 @@
 import { Session, SensorData } from '../types';
 import { db } from '../firebaseConfig';
-import { collection, addDoc, getDocs, writeBatch, query, orderBy } from 'firebase/firestore';
+// FIX: Updated Firebase import path from 'firebase/firestore' to '@firebase/firestore' to resolve module export errors.
+import { collection, addDoc, getDocs, writeBatch, query, orderBy } from '@firebase/firestore';
 
 const SESSIONS_COLLECTION = 'sessions';
 

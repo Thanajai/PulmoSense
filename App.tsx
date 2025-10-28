@@ -5,11 +5,12 @@ import DashboardPage from './pages/DashboardPage';
 import HistoryPage from './pages/HistoryPage';
 import ProfilePage from './pages/ProfilePage';
 import SupportPage from './pages/SupportPage';
-import { Page, SensorData, Session, User } from './types';
+import { Page, SensorData, Session, User, ConnectionStatus } from './types';
 import { saveSession, getSessions, clearSessions } from './services/sensorService';
-import { auth, rtdb } from './firebaseConfig';
-import { onAuthStateChanged } from 'firebase/auth';
-import { ref, onValue, off } from 'firebase/database';
+import { auth } from './firebaseConfig';
+// FIX: Updated Firebase import path from 'firebase/auth' to '@firebase/auth' to resolve module export error.
+import { onAuthStateChanged } from '@firebase/auth';
+import liveDataService from './services/liveDataService';
 
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<Page>(Page.Home);
@@ -18,10 +19,11 @@ const App: React.FC = () => {
   const [currentSession, setCurrentSession] = useState<Omit<Session, 'id'> | null>(null);
   const [allSessions, setAllSessions] = useState<Session[]>([]);
   const [isMonitoring, setIsMonitoring] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
 
-  // Handle Firebase auth state
+  // Handle Firebase auth state and RTDB connection status globally
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const authUnsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
         const sessions = await getSessions(currentUser.uid);
@@ -30,36 +32,36 @@ const App: React.FC = () => {
         setAllSessions([]);
       }
     });
-    return () => unsubscribe();
+
+    const connectionUnsubscribe = liveDataService.subscribeToConnectionStatus(setConnectionStatus);
+
+    return () => {
+      authUnsubscribe();
+      connectionUnsubscribe();
+    };
   }, []);
   
-  // Handle live data from Realtime Database
+  // Handle live data subscription only when monitoring
   useEffect(() => {
-    if (activePage !== Page.Dashboard || !isMonitoring) {
-        return;
-    }
-    
-    const liveDataRef = ref(rtdb, 'live_data'); // Assumes data is at '/live_data' path
-    const unsubscribe = onValue(liveDataRef, (snapshot) => {
-      const dataPoint = snapshot.val();
-      if (dataPoint) {
-        // Add a client-side timestamp if one isn't provided
-        if (!dataPoint.timestamp) {
-            dataPoint.timestamp = new Date().toISOString();
-        }
-        setLiveData(prevData => {
-          const updatedData = [...prevData, dataPoint];
-          // Keep the array length manageable
-          return updatedData.length > 50 ? updatedData.slice(1) : updatedData;
-        });
-      }
+    if (!isMonitoring) return;
+
+    const dataUnsubscribe = liveDataService.subscribeToData((dataPoint) => {
+      setLiveData(prevData => {
+        const updatedData = [...prevData, dataPoint];
+        // Keep the array length manageable to prevent performance degradation
+        return updatedData.length > 50 ? updatedData.slice(-50) : updatedData;
+      });
     });
 
-    // Cleanup listener on component unmount or page change
-    return () => off(liveDataRef, 'value', unsubscribe);
-  }, [activePage, isMonitoring]);
+    // Cleanup subscription when monitoring stops or component unmounts
+    return () => dataUnsubscribe();
+  }, [isMonitoring]);
   
   const startMonitoring = () => {
+      if (connectionStatus !== 'connected') {
+        alert('Cannot start monitoring. Please check your internet connection.');
+        return;
+      }
       const newSession: Omit<Session, 'id'> = {
         startTime: new Date(),
         endTime: null,
@@ -98,9 +100,9 @@ const App: React.FC = () => {
   const renderPage = () => {
     switch (activePage) {
       case Page.Home:
-        return <HomePage onStartMonitoring={startMonitoring} />;
+        return <HomePage onStartMonitoring={startMonitoring} connectionStatus={connectionStatus} />;
       case Page.Dashboard:
-        return <DashboardPage liveData={liveData} isMonitoring={isMonitoring} onStopMonitoring={stopMonitoring} />;
+        return <DashboardPage liveData={liveData} isMonitoring={isMonitoring} onStopMonitoring={stopMonitoring} connectionStatus={connectionStatus} />;
       case Page.History:
         return <HistoryPage sessions={allSessions} clearHistory={handleClearHistory} user={user} />;
       case Page.Profile:
@@ -108,7 +110,7 @@ const App: React.FC = () => {
       case Page.Support:
         return <SupportPage />;
       default:
-        return <HomePage onStartMonitoring={startMonitoring} />;
+        return <HomePage onStartMonitoring={startMonitoring} connectionStatus={connectionStatus} />;
     }
   };
 

@@ -1,11 +1,39 @@
 import React from 'react';
 import GlassCard from '../components/GlassCard';
+import { ConnectionStatus } from '../types';
 
 interface HomePageProps {
   onStartMonitoring: () => void;
+  connectionStatus: ConnectionStatus;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ onStartMonitoring }) => {
+const ConnectionIndicator: React.FC<{ status: ConnectionStatus }> = ({ status }) => {
+  let color = 'bg-yellow-400';
+  let text = 'Connecting to cloud...';
+  let pulse = true;
+
+  if (status === 'connected') {
+    color = 'bg-green-500';
+    text = 'Ready to monitor from cloud';
+    pulse = false;
+  } else if (status === 'disconnected') {
+    color = 'bg-red-500';
+    text = 'Disconnected from cloud';
+    pulse = false;
+  }
+
+  return (
+    <div className="mt-8 flex items-center justify-center space-x-3">
+      <div className={`w-4 h-4 rounded-full ${color} ${pulse ? 'animate-pulse' : ''}`}></div>
+      <span className="text-gray-600 font-medium">{text}</span>
+    </div>
+  );
+};
+
+
+const HomePage: React.FC<HomePageProps> = ({ onStartMonitoring, connectionStatus }) => {
+  const isReady = connectionStatus === 'connected';
+
   return (
     <div className="flex flex-col items-center justify-center h-full text-center">
       <GlassCard className="max-w-2xl w-full">
@@ -21,16 +49,19 @@ const HomePage: React.FC<HomePageProps> = ({ onStartMonitoring }) => {
           <div className="mt-12">
             <button
               onClick={onStartMonitoring}
-              className={`px-8 py-4 text-lg font-bold rounded-full transition-all duration-300 transform hover:scale-105 bg-cyan-500 hover:bg-cyan-600 text-white shadow-lg`}
+              disabled={!isReady}
+              aria-disabled={!isReady}
+              className={`px-8 py-4 text-lg font-bold rounded-full transition-all duration-300 transform hover:scale-105 ${
+                isReady
+                  ? 'bg-cyan-500 hover:bg-cyan-600 text-white shadow-lg'
+                  : 'bg-gray-400 text-white cursor-not-allowed'
+              }`}
             >
               Start Monitoring
             </button>
           </div>
 
-          <div className="mt-8 flex items-center justify-center space-x-3">
-             <div className="w-4 h-4 rounded-full bg-gray-300"></div>
-            <span className="text-gray-600 font-medium">Ready to monitor from cloud</span>
-          </div>
+          <ConnectionIndicator status={connectionStatus} />
         </div>
       </GlassCard>
       <footer className="absolute bottom-4 text-gray-600 text-sm">

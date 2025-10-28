@@ -1,6 +1,6 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { SensorData } from '../types';
+import { SensorData, ConnectionStatus } from '../types';
 import GlassCard from '../components/GlassCard';
 import { getInterpretation } from '../services/sensorService';
 import { WaveformIcon } from '../components/icons/Icons';
@@ -9,6 +9,7 @@ interface DashboardPageProps {
   liveData: SensorData[];
   isMonitoring: boolean;
   onStopMonitoring: () => void;
+  connectionStatus: ConnectionStatus;
 }
 
 const SensorChart: React.FC<{ data: SensorData[]; dataKey: keyof SensorData; color: string; name: string }> = ({ data, dataKey, color, name }) => {
@@ -57,8 +58,33 @@ const BreathQualityIndex: React.FC<{ air_quality: number }> = ({ air_quality }) 
     );
 };
 
+const ConnectionBanner: React.FC<{ status: ConnectionStatus }> = ({ status }) => {
+    if (status === 'connected') {
+        return null;
+    }
 
-const DashboardPage: React.FC<DashboardPageProps> = ({ liveData, isMonitoring, onStopMonitoring }) => {
+    let bgColor = 'bg-yellow-100 border-yellow-500 text-yellow-700';
+    let message = 'Connection is unstable. Attempting to reconnect...';
+
+    if (status === 'disconnected') {
+        bgColor = 'bg-red-100 border-red-500 text-red-700';
+        message = 'Connection to cloud lost. Live data is paused.';
+    }
+     if (status === 'connecting') {
+        bgColor = 'bg-blue-100 border-blue-500 text-blue-700';
+        message = 'Connecting to the live data stream...';
+    }
+
+    return (
+        <div className={`p-4 mb-4 border-l-4 rounded-r-lg ${bgColor}`} role="alert">
+            <p className="font-bold">{status.charAt(0).toUpperCase() + status.slice(1)}</p>
+            <p>{message}</p>
+        </div>
+    );
+};
+
+
+const DashboardPage: React.FC<DashboardPageProps> = ({ liveData, isMonitoring, onStopMonitoring, connectionStatus }) => {
   const latestData = liveData.length > 0 ? liveData[liveData.length - 1] : null;
 
   if (!isMonitoring) {
@@ -72,31 +98,18 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ liveData, isMonitoring, o
       </div>
     );
   }
-  
-  if (!latestData) {
-     return (
-      <div className="flex flex-col items-center justify-center h-full text-center">
-        <GlassCard>
-          <WaveformIcon className="w-16 h-16 text-cyan-500 mx-auto mb-4 animate-pulse" />
-          <h2 className="text-2xl font-bold text-gray-900">Listening for live data...</h2>
-          <p className="text-gray-500 mt-2">Waiting for the first reading from the cloud.</p>
-        </GlassCard>
-      </div>
-    );
-  }
 
-  const tooltipStyle = { backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: 'rgba(0, 0, 0, 0.2)' };
-
-  return (
-    <div>
-        <div className="flex justify-end mb-4">
-            <button 
-                onClick={onStopMonitoring}
-                className="px-6 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors"
-            >
-                Stop & Save Session
-            </button>
+  const monitoringContent = (
+    <>
+      {!latestData ? (
+        <div className="flex flex-col items-center justify-center h-full text-center mt-8">
+          <GlassCard>
+            <WaveformIcon className="w-16 h-16 text-cyan-500 mx-auto mb-4 animate-pulse" />
+            <h2 className="text-2xl font-bold text-gray-900">Listening for live data...</h2>
+            <p className="text-gray-500 mt-2">Waiting for the first reading from the cloud.</p>
+          </GlassCard>
         </div>
+      ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Air Quality Chart */}
             <GlassCard className="lg:col-span-3">
@@ -129,7 +142,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ liveData, isMonitoring, o
                     <h3 className="text-center font-semibold text-sm text-gray-700">Carbon Monoxide (MQ-7)</h3>
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={liveData}>
-                            <Tooltip contentStyle={tooltipStyle} />
+                            <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: 'rgba(0, 0, 0, 0.2)' }} />
                             <Line type="monotone" dataKey="co" name="CO" stroke="#facc15" strokeWidth={2} dot={false} isAnimationActive={false}/>
                         </LineChart>
                     </ResponsiveContainer>
@@ -138,7 +151,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ liveData, isMonitoring, o
                     <h3 className="text-center font-semibold text-sm text-gray-700">Alcohol (MQ-3)</h3>
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={liveData}>
-                            <Tooltip contentStyle={tooltipStyle} />
+                            <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: 'rgba(0, 0, 0, 0.2)' }} />
                             <Line type="monotone" dataKey="alcohol" name="Alcohol" stroke="#a78bfa" strokeWidth={2} dot={false} isAnimationActive={false}/>
                         </LineChart>
                     </ResponsiveContainer>
@@ -155,6 +168,23 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ liveData, isMonitoring, o
             </GlassCard>
 
         </div>
+      )}
+    </>
+  );
+
+  return (
+    <div>
+        <div className="flex justify-between items-center mb-4">
+            <h1 className="text-3xl font-bold font-poppins text-gray-900">Live Dashboard</h1>
+            <button 
+                onClick={onStopMonitoring}
+                className="px-6 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors"
+            >
+                Stop & Save Session
+            </button>
+        </div>
+        <ConnectionBanner status={connectionStatus} />
+        {monitoringContent}
     </div>
   );
 };
