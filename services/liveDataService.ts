@@ -3,19 +3,6 @@ import { ref, onValue, off } from '@firebase/database';
 import { rtdb } from '../firebaseConfig';
 import { SensorData, ConnectionStatus } from '../types';
 
-// Type guard to validate the structure of sensor data from Firebase
-function isSensorData(data: any): data is SensorData {
-  return (
-    data &&
-    typeof data.timestamp === 'string' &&
-    typeof data.air_quality === 'number' &&
-    typeof data.co === 'number' &&
-    typeof data.alcohol === 'number' &&
-    typeof data.temperature === 'number' &&
-    typeof data.humidity === 'number'
-  );
-}
-
 const LIVE_DATA_PATH = 'voc_readings/latest';
 const CONNECTION_STATUS_PATH = '.info/connected';
 
@@ -28,19 +15,19 @@ const liveDataService = {
   subscribeToData(onData: (data: SensorData) => void): () => void {
     const liveDataRef = ref(rtdb, LIVE_DATA_PATH);
     const listener = onValue(liveDataRef, (snapshot) => {
-      const dataPoint = snapshot.val();
-      if (dataPoint) {
-        // Add a client-side timestamp if one isn't provided, for robustness.
-        if (!dataPoint.timestamp) {
-            dataPoint.timestamp = new Date().toISOString();
-        }
-
-        // Validate data structure before processing to prevent runtime errors.
-        if (isSensorData(dataPoint)) {
-            onData(dataPoint);
-        } else {
-            console.warn('Received malformed sensor data:', dataPoint);
-        }
+      const rawData = snapshot.val();
+      // Validate the structure of the raw data from Firebase
+      if (rawData && typeof rawData.mq135 === 'number' && typeof rawData.mq7 === 'number' && typeof rawData.mq3 === 'number') {
+        // Map raw data to the SensorData interface used by the app
+        const mappedData: SensorData = {
+          timestamp: new Date().toISOString(),
+          air_quality: rawData.mq135,
+          co: rawData.mq7,
+          alcohol: rawData.mq3,
+        };
+        onData(mappedData);
+      } else if (rawData) { // Only warn if rawData is not null/undefined
+        console.warn('Received malformed or incomplete sensor data:', rawData);
       }
     });
 

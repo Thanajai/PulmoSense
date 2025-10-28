@@ -158,14 +158,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ liveData, isMonitoring, o
                 </div>
                 </div>
             </GlassCard>
-            
-            <GlassCard className="lg:col-span-3">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Environmental Conditions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <SensorChart data={liveData} dataKey="temperature" color="#fb923c" name="Temperature (°C)" />
-                    <SensorChart data={liveData} dataKey="humidity" color="#60a5fa" name="Humidity (%)" />
-                </div>
-            </GlassCard>
 
         </div>
       )}
