@@ -1,9 +1,9 @@
 
 export interface SensorData {
   timestamp: string;
-  voc: number;
-  co2: number;
-  nh3: number;
+  air_quality: number; // from MQ-135
+  alcohol: number;     // from MQ-3
+  co: number;          // from MQ-7
   temperature: number;
   humidity: number;
 }

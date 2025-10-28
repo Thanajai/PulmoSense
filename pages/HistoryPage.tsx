@@ -23,8 +23,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ sessions, clearHistory }) => 
   
   const trendData = sessions.map(session => ({
     date: new Date(session.startTime).toLocaleDateString(),
-    // FIX: Removed parseFloat as getAverage now returns a number.
-    avgVOC: getAverage(session.data, 'voc'),
+    avg_air_quality: getAverage(session.data, 'air_quality'),
   })).slice(-10); // show last 10 sessions trend
   
   const axisColor = '#6b7280';
@@ -52,7 +51,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ sessions, clearHistory }) => 
       ) : (
         <div className="space-y-6">
             <GlassCard>
-                <h2 className="text-xl font-bold text-gray-900 mb-4">VOC Trend Over Time</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Air Quality Trend Over Time</h2>
                 <ResponsiveContainer width="100%" height={300}>
                     <LineChart data={trendData}>
                         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
@@ -60,7 +59,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ sessions, clearHistory }) => 
                         <YAxis stroke={axisColor} fontSize={12} />
                         <Tooltip contentStyle={tooltipStyle} />
                         <Legend />
-                        <Line type="monotone" dataKey="avgVOC" name="Average VOC (ppm)" stroke="#22d3ee" strokeWidth={2} />
+                        <Line type="monotone" dataKey="avg_air_quality" name="Average Air Quality (ppm)" stroke="#22d3ee" strokeWidth={2} />
                     </LineChart>
                 </ResponsiveContainer>
             </GlassCard>
@@ -71,23 +70,21 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ sessions, clearHistory }) => 
                     <tr>
                         <th className="p-4">Date</th>
                         <th className="p-4">Duration</th>
-                        <th className="p-4">Avg. VOC</th>
+                        <th className="p-4">Avg. Air Quality</th>
                         <th className="p-4">Interpretation</th>
                     </tr>
                     </thead>
                     <tbody>
                     {sessions.slice().reverse().map(session => {
-                        // FIX: Removed parseFloat as getAverage now returns a number.
-                        const avgVOC = getAverage(session.data, 'voc');
-                        const interpretation = getInterpretation(avgVOC);
+                        const avgAirQuality = getAverage(session.data, 'air_quality');
+                        const interpretation = getInterpretation(avgAirQuality);
                         const duration = session.endTime ? ((session.endTime.getTime() - new Date(session.startTime).getTime()) / 1000).toFixed(0) + 's' : 'In progress';
 
                         return (
                         <tr key={session.id} className="border-b border-gray-200 hover:bg-gray-100/50">
                             <td className="p-4">{new Date(session.startTime).toLocaleString()}</td>
                             <td className="p-4">{duration}</td>
-                            {/* FIX: Formatted number to one decimal place for consistent display. */}
-                            <td className={`p-4 font-mono ${interpretation.color}`}>{avgVOC.toFixed(1)} ppm</td>
+                            <td className={`p-4 font-mono ${interpretation.color}`}>{avgAirQuality.toFixed(1)} ppm</td>
                             <td className={`p-4 ${interpretation.color}`}>{interpretation.text}</td>
                         </tr>
                         );

@@ -22,8 +22,8 @@ const SupportPage: React.FC = () => {
               answer="Navigate to the Home page and click the 'Connect Device' button. Ensure your device is powered on and within range. Your browser may ask for permission to access Bluetooth or Serial ports."
             />
             <FAQItem
-              question="What do the VOC readings mean?"
-              answer="VOCs (Volatile Organic Compounds) can indicate various environmental or physiological factors. Our app provides a simple interpretation: Green for normal, Yellow for slight elevation, and Red for high levels. Consistent high readings should be discussed with a healthcare professional."
+              question="What do the sensor readings mean?"
+              answer="The dashboard shows readings from three different sensors. MQ-135 measures general air quality (impurities like smoke, benzene, and other VOCs). MQ-3 specifically detects alcohol levels. MQ-7 is for carbon monoxide (CO). The app provides a simple interpretation: Green for normal, Yellow for slight elevation, and Red for high levels."
             />
             <FAQItem
               question="Is my data secure?"

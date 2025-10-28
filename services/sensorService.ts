@@ -4,9 +4,9 @@ import { SensorData, Session } from '../types';
 // Mock data generation
 export const generateDataPoint = (lastData?: SensorData): SensorData => {
   const base = {
-    voc: 200,
-    co2: 400,
-    nh3: 20,
+    air_quality: 150, // MQ-135 base for clean air
+    alcohol: 10,      // MQ-3 base
+    co: 5,            // MQ-7 base
     temperature: 28,
     humidity: 55,
   };
@@ -19,9 +19,9 @@ export const generateDataPoint = (lastData?: SensorData): SensorData => {
 
   return {
     timestamp: new Date().toISOString(),
-    voc: Math.max(50, Math.min(600, fluctuation(last.voc, 50))),
-    co2: Math.max(300, Math.min(1000, fluctuation(last.co2, 100))),
-    nh3: Math.max(5, Math.min(100, fluctuation(last.nh3, 10))),
+    air_quality: Math.max(50, Math.min(600, fluctuation(last.air_quality, 50))),
+    alcohol: Math.max(0, Math.min(200, fluctuation(last.alcohol, 10))),
+    co: Math.max(0, Math.min(100, fluctuation(last.co, 5))),
     temperature: parseFloat(fluctuation(last.temperature, 1).toFixed(1)),
     humidity: Math.max(30, Math.min(80, fluctuation(last.humidity, 5))),
   };
@@ -54,8 +54,8 @@ export const clearSessions = (): void => {
   localStorage.removeItem(SESSIONS_KEY);
 };
 
-export const getInterpretation = (voc: number): { text: string; color: string } => {
-  if (voc < 200) return { text: "Normal breath quality", color: "text-green-400" };
-  if (voc >= 200 && voc <= 400) return { text: "Slight elevation detected", color: "text-yellow-400" };
-  return { text: "High VOC levels detected", color: "text-red-400" };
+export const getInterpretation = (air_quality: number): { text: string; color: string } => {
+  if (air_quality < 200) return { text: "Normal breath quality", color: "text-green-400" };
+  if (air_quality >= 200 && air_quality <= 400) return { text: "Slight elevation detected", color: "text-yellow-400" };
+  return { text: "High impurity levels detected", color: "text-red-400" };
 };

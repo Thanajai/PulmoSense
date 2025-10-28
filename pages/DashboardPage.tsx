@@ -38,13 +38,13 @@ const SensorChart: React.FC<{ data: SensorData[]; dataKey: keyof SensorData; col
   )
 };
 
-const BreathQualityIndex: React.FC<{ voc: number }> = ({ voc }) => {
-    const { text, color } = getInterpretation(voc);
-    const percentage = Math.min(100, (voc / 600) * 100);
+const BreathQualityIndex: React.FC<{ air_quality: number }> = ({ air_quality }) => {
+    const { text, color } = getInterpretation(air_quality);
+    const percentage = Math.min(100, (air_quality / 600) * 100);
     
     let barColor = 'bg-green-500';
-    if (voc > 200) barColor = 'bg-yellow-500';
-    if (voc > 400) barColor = 'bg-red-500';
+    if (air_quality > 200) barColor = 'bg-yellow-500';
+    if (air_quality > 400) barColor = 'bg-red-500';
     
     return (
         <div>
@@ -88,46 +88,48 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ liveData, connectionStatu
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Main VOC Chart */}
+      {/* Main Air Quality Chart */}
       <GlassCard className="lg:col-span-3">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Volatile Organic Compounds (VOC)</h2>
-        <SensorChart data={liveData} dataKey="voc" color="#22d3ee" name="VOC (ppm)" />
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Air Quality (MQ-135)</h2>
+        <SensorChart data={liveData} dataKey="air_quality" color="#22d3ee" name="Air Quality (ppm)" />
       </GlassCard>
       
       {/* BQI and Info */}
       <GlassCard className="lg:col-span-1 flex flex-col justify-between">
-        <BreathQualityIndex voc={latestData.voc} />
+        <BreathQualityIndex air_quality={latestData.air_quality} />
          <div className="mt-4">
             <h3 className="text-lg font-semibold text-gray-900">Current Readings</h3>
             <div className="flex justify-between mt-2 text-gray-600">
-                <span>VOC:</span><span className="font-mono text-gray-900">{latestData.voc.toFixed(0)} ppm</span>
+                <span>Air Quality:</span><span className="font-mono text-gray-900">{latestData.air_quality.toFixed(0)} ppm</span>
             </div>
              <div className="flex justify-between mt-1 text-gray-600">
-                <span>CO₂:</span><span className="font-mono text-gray-900">{latestData.co2.toFixed(0)} ppm</span>
+                <span>Alcohol:</span><span className="font-mono text-gray-900">{latestData.alcohol.toFixed(0)} ppm</span>
             </div>
             <div className="flex justify-between mt-1 text-gray-600">
-                <span>NH₃:</span><span className="font-mono text-gray-900">{latestData.nh3.toFixed(0)} ppm</span>
+                <span>CO:</span><span className="font-mono text-gray-900">{latestData.co.toFixed(0)} ppm</span>
             </div>
          </div>
       </GlassCard>
 
-      {/* Other Charts */}
+      {/* Other Gas Charts */}
       <GlassCard className="lg:col-span-2">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Other Gas Levels</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Specific Gas Levels</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="h-48">
+            <h3 className="text-center font-semibold text-sm text-gray-700">Alcohol (MQ-3)</h3>
              <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={liveData}>
                     <Tooltip contentStyle={tooltipStyle} />
-                    <Line type="monotone" dataKey="co2" name="CO₂" stroke="#a78bfa" strokeWidth={2} dot={false} isAnimationActive={false}/>
+                    <Line type="monotone" dataKey="alcohol" name="Alcohol" stroke="#a78bfa" strokeWidth={2} dot={false} isAnimationActive={false}/>
                 </LineChart>
              </ResponsiveContainer>
           </div>
           <div className="h-48">
+             <h3 className="text-center font-semibold text-sm text-gray-700">Carbon Monoxide (MQ-7)</h3>
              <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={liveData}>
                      <Tooltip contentStyle={tooltipStyle} />
-                    <Line type="monotone" dataKey="nh3" name="NH₃" stroke="#facc15" strokeWidth={2} dot={false} isAnimationActive={false}/>
+                    <Line type="monotone" dataKey="co" name="CO" stroke="#facc15" strokeWidth={2} dot={false} isAnimationActive={false}/>
                 </LineChart>
              </ResponsiveContainer>
           </div>
