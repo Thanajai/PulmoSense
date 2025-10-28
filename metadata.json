@@ -1,7 +1,5 @@
 {
   "name": "PulmoSense Lite Dashboard",
   "description": "A futuristic web dashboard to visualize live readings from the PulmoSense Lite lung health screening device. It displays real-time air quality and breath composition data with simple interpretations.",
-  "requestFramePermissions": [
-    "serial"
-  ]
+  "requestFramePermissions": []
 }

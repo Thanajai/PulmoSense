@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Session } from '../types';
+import { Session, User } from '../types';
 import GlassCard from '../components/GlassCard';
 import { getInterpretation } from '../services/sensorService';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -9,22 +8,21 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 interface HistoryPageProps {
   sessions: Session[];
   clearHistory: () => void;
+  user: User | null;
 }
 
-const HistoryPage: React.FC<HistoryPageProps> = ({ sessions, clearHistory }) => {
+const HistoryPage: React.FC<HistoryPageProps> = ({ sessions, clearHistory, user }) => {
 
-  // FIX: Refactored getAverage to return a number for type safety and clarity.
-  // This resolves the error from passing a mixed type to parseFloat.
-  const getAverage = (data: any[], key: string) => {
-    if (data.length === 0) return 0;
-    const sum = data.reduce((acc, curr) => acc + curr[key], 0);
+  const getAverage = (data: any[], key: string): number => {
+    if (!data || data.length === 0) return 0;
+    const sum = data.reduce((acc, curr) => acc + (curr[key] || 0), 0);
     return (sum / data.length);
   };
   
   const trendData = sessions.map(session => ({
     date: new Date(session.startTime).toLocaleDateString(),
     avg_air_quality: getAverage(session.data, 'air_quality'),
-  })).slice(-10); // show last 10 sessions trend
+  })).slice(0, 10).reverse(); // show last 10 sessions trend
   
   const axisColor = '#6b7280';
   const gridColor = 'rgba(0, 0, 0, 0.1)';
@@ -32,6 +30,14 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ sessions, clearHistory }) => 
   const tooltipBorder = 'rgba(0, 0, 0, 0.2)';
   const tooltipColor = '#1f2937';
   const tooltipStyle = { backgroundColor: tooltipBg, borderColor: tooltipBorder, color: tooltipColor };
+
+  if (!user) {
+    return (
+      <GlassCard>
+        <p className="text-center text-gray-500 py-8">Please sign in on the Profile page to view your session history.</p>
+      </GlassCard>
+    );
+  }
 
   return (
     <div>
@@ -46,7 +52,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ sessions, clearHistory }) => 
 
       {sessions.length === 0 ? (
         <GlassCard>
-          <p className="text-center text-gray-500 py-8">No saved sessions yet. Connect your device to start a new session.</p>
+          <p className="text-center text-gray-500 py-8">No saved sessions yet. Start monitoring to record your first session.</p>
         </GlassCard>
       ) : (
         <div className="space-y-6">
@@ -75,10 +81,10 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ sessions, clearHistory }) => 
                     </tr>
                     </thead>
                     <tbody>
-                    {sessions.slice().reverse().map(session => {
+                    {sessions.map(session => {
                         const avgAirQuality = getAverage(session.data, 'air_quality');
                         const interpretation = getInterpretation(avgAirQuality);
-                        const duration = session.endTime ? ((session.endTime.getTime() - new Date(session.startTime).getTime()) / 1000).toFixed(0) + 's' : 'In progress';
+                        const duration = session.endTime ? ((new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000).toFixed(0) + 's' : 'In progress';
 
                         return (
                         <tr key={session.id} className="border-b border-gray-200 hover:bg-gray-100/50">

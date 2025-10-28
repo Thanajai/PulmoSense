@@ -1,4 +1,3 @@
-
 import React from 'react';
 import GlassCard from '../components/GlassCard';
 
@@ -18,16 +17,16 @@ const SupportPage: React.FC = () => {
           <GlassCard>
             <h2 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h2>
             <FAQItem
-              question="How do I connect my PulmoSense Lite device?"
-              answer="Navigate to the Home page and click the 'Connect Device' button. Ensure your device is powered on and within range. Your browser may ask for permission to access Bluetooth or Serial ports."
+              question="How do I get started?"
+              answer="Navigate to the Home page and click the 'Start Monitoring' button. This will take you to the dashboard which displays live sensor data streamed from our secure cloud database."
             />
             <FAQItem
               question="What do the sensor readings mean?"
-              answer="The dashboard shows readings from three different sensors. MQ-135 measures general air quality (impurities like smoke, benzene, and other VOCs). MQ-3 specifically detects alcohol levels. MQ-7 is for carbon monoxide (CO). The app provides a simple interpretation: Green for normal, Yellow for slight elevation, and Red for high levels."
+              answer="The dashboard shows readings from three different sensors. MQ-135 measures general air quality (impurities like smoke, benzene, and other VOCs). MQ-7 is for carbon monoxide (CO). MQ-3 specifically detects alcohol levels. The app provides a simple interpretation: Green for normal, Yellow for slight elevation, and Red for high levels."
             />
             <FAQItem
               question="Is my data secure?"
-              answer="All session data is stored locally on your device's browser storage. We do not transmit your personal health data to our servers for PulmoSense Lite."
+              answer="If you choose to sign in, your session history is stored securely in your own private collection in our cloud database. Live sensor data is streamed anonymously. We prioritize your privacy and data security."
             />
              <FAQItem
               question="How can I export my data?"

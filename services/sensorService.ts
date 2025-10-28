@@ -1,57 +1,59 @@
+import { Session, SensorData } from '../types';
+import { db } from '../firebaseConfig';
+import { collection, addDoc, getDocs, writeBatch, query, orderBy } from 'firebase/firestore';
 
-import { SensorData, Session } from '../types';
+const SESSIONS_COLLECTION = 'sessions';
 
-// Mock data generation
-export const generateDataPoint = (lastData?: SensorData): SensorData => {
-  const base = {
-    air_quality: 150, // MQ-135 base for clean air
-    alcohol: 10,      // MQ-3 base
-    co: 5,            // MQ-7 base
-    temperature: 28,
-    humidity: 55,
-  };
-
-  const fluctuation = (value: number, range: number) => {
-    return value + (Math.random() - 0.5) * range;
-  };
-
-  const last = lastData || base;
-
-  return {
-    timestamp: new Date().toISOString(),
-    air_quality: Math.max(50, Math.min(600, fluctuation(last.air_quality, 50))),
-    alcohol: Math.max(0, Math.min(200, fluctuation(last.alcohol, 10))),
-    co: Math.max(0, Math.min(100, fluctuation(last.co, 5))),
-    temperature: parseFloat(fluctuation(last.temperature, 1).toFixed(1)),
-    humidity: Math.max(30, Math.min(80, fluctuation(last.humidity, 5))),
-  };
-};
-
-// Local storage helpers
-const SESSIONS_KEY = 'pulmosense_sessions';
-
-export const saveSession = (session: Session): void => {
-  const sessions = getSessions();
-  sessions.push(session);
-  localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
-};
-
-export const getSessions = (): Session[] => {
-  const savedSessions = localStorage.getItem(SESSIONS_KEY);
-  if (savedSessions) {
-    const parsed = JSON.parse(savedSessions);
-    // Revive Date objects
-    return parsed.map((s: any) => ({
-      ...s,
-      startTime: new Date(s.startTime),
-      endTime: s.endTime ? new Date(s.endTime) : null,
-    }));
+// Firestore helpers
+export const saveSession = async (session: Omit<Session, 'id'>, userId: string): Promise<string> => {
+  try {
+    const docRef = await addDoc(collection(db, 'users', userId, SESSIONS_COLLECTION), {
+      ...session,
+      // Convert Date objects to Timestamps for Firestore
+      startTime: session.startTime,
+      endTime: session.endTime,
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error("Error saving session to Firestore:", error);
+    throw error;
   }
-  return [];
 };
 
-export const clearSessions = (): void => {
-  localStorage.removeItem(SESSIONS_KEY);
+export const getSessions = async (userId: string): Promise<Session[]> => {
+  try {
+    const sessionsQuery = query(collection(db, 'users', userId, SESSIONS_COLLECTION), orderBy('startTime', 'desc'));
+    const querySnapshot = await getDocs(sessionsQuery);
+    return querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        // Convert Firestore Timestamps back to Date objects
+        startTime: data.startTime.toDate(),
+        endTime: data.endTime ? data.endTime.toDate() : null,
+      } as Session;
+    });
+  } catch (error) {
+    console.error("Error getting sessions from Firestore:", error);
+    return [];
+  }
+};
+
+export const clearSessions = async (userId: string): Promise<void> => {
+  try {
+    const sessionsRef = collection(db, 'users', userId, SESSIONS_COLLECTION);
+    const querySnapshot = await getDocs(sessionsRef);
+
+    const batch = writeBatch(db);
+    querySnapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+  } catch (error) {
+    console.error("Error clearing sessions from Firestore:", error);
+  }
 };
 
 export const getInterpretation = (air_quality: number): { text: string; color: string } => {

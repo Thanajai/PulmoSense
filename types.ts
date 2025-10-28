@@ -1,15 +1,16 @@
+import { User } from 'firebase/auth';
 
 export interface SensorData {
   timestamp: string;
   air_quality: number; // from MQ-135
-  alcohol: number;     // from MQ-3
   co: number;          // from MQ-7
+  alcohol: number;     // from MQ-3
   temperature: number;
   humidity: number;
 }
 
 export interface Session {
-  id: number;
+  id: string; // Changed to string for Firestore
   startTime: Date;
   endTime: Date | null;
   data: SensorData[];
@@ -25,3 +26,5 @@ export enum Page {
 }
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
+
+export type { User };
